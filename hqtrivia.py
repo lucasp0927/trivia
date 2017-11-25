@@ -147,7 +147,7 @@ class HQTrivia:
                 # for b in ans_box:
                 #     print(b.content)
                 anstxt = anstxt.rstrip().split('\n')
-                anstxt = list(filter(lambda x: x!='', anstxt))
+                anstxt = list(filter(lambda x: x.rstrip()!='', anstxt))
                 print(anstxt)
                 self.search_answer(query,anstxt)
 
