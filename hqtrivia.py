@@ -1,16 +1,11 @@
-import numpy as np
+#import numpy as np
 import cv2
 from PIL import Image
-import sys, re
+import sys
 import pyocr
 import pyocr.builders
-import webbrowser
-from nltk.tag import pos_tag
-from urllib import request
-#from google import search
-from bs4 import BeautifulSoup
-import string
-import urllib
+import Searcher
+
 class HQTrivia:
 #    cam_size = (1280, 720)
     cam_size = (1920, 1080)
@@ -37,70 +32,15 @@ class HQTrivia:
         print("Available languages: %s" % ", ".join(langs))
         self.lang = langs[0]
         print("Will use lang '%s'" % (self.lang))
+        # initialize searcher class
+        self.searcher = Searcher.Searcher()
 
-    def get_page(self,query):
-        headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0'}
-        req = urllib.request.Request('http://www.google.com/search?q='+query,headers=headers)
-        page = urllib.request.urlopen(req)
-        html = page.read()
-        return html
-
-    def alexa_rank(self,url):
-        xml = request.urlopen('http://data.alexa.com/data?cli=10&dat=s&url=%s'%url).read().decode("utf-8")
-        sp = re.search(r'REACH RANK="\d+"', xml).span()
-        return int(xml[sp[0]+12:sp[1]-1])
-
-    def search_answer(self,query,ans):
-        #search whole question
-        query_plus = query.replace(' ','+')
-        #print("query url:", "www.google.com/search?q="+query_plus)
-        webbrowser.get('chrome').open_new_tab("http://www.google.com/search?q="+query_plus)
-
-        #try quote
-        find_quote = False
-        qmark_combine = (("“","\""),("\"","\""),("“","“"),("\"","“"),("“","”"),("\"","”"),("”","“"))
-        for qc in qmark_combine:
-            start_pt = query_plus.find(qc[0])
-            end_pt = query_plus.find(qc[1], start_pt + 1)  # add one to skip the opening "
-            quote = query_plus[start_pt + 1: end_pt]  # add one to get the quote excluding the ""
-            if len(quote)!=0 and start_pt!=-1 and end_pt!=-1:
-                print("find quote!")
-                find_quote = True
-                print(quote)
-                webbrowser.get('chrome').open_new_tab("http://www.google.com/search?q="+quote)
-
-        #search proper nouns
-        translator = str.maketrans('', '', string.punctuation)
-        query = query.translate(translator)
-        tagged_sent = pos_tag(query.split())
-        propernouns = [word for word,pos in tagged_sent if pos == 'NNP']
-        propernouns = list(filter(lambda x: x != "Which", propernouns))
-        if len(propernouns)!=0:
-            if find_quote == False:
-                print("search: "," ".join(propernouns))
-                webbrowser.get('chrome').open_new_tab("http://www.google.com/search?q="+"+".join(propernouns))
-        print('------------------------------------------------------')
-        if len(ans)<=5:
-            for a in ans:
-                print("\n"+a+" "+" ".join(propernouns))
-                try:
-                    html=self.get_page(a+"+"+"+".join(propernouns))
-                    html = str(html)
-                    start_idx = html.find("<h3 class=\"r\"><a href=\"")
-                    end_idx = html.find('\"',start_idx+len("<h3 class=\"r\"><a href=\""))
-                    url = html[start_idx+len("<h3 class=\"r\"><a href=\""):end_idx]
-                    print(url)
-                    print(len(url))
-                except:
-                    pass
-        print('------------------------------------------------------')
-        print('------------------------------------------------------')
     def main_loop(self,flip=False):
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(1)
+        #cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)#doesn't seem to work?
         while(True):
             # Capture frame-by-frame
             ret, frame = cap.read()
-
             # Our operations on the frame come here
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             #print(gray.shape)
@@ -144,16 +84,12 @@ class HQTrivia:
                 )
                 query = txt.replace('\n',' ').rstrip()
                 print(query)
-                # for b in ans_box:
-                #     print(b.content)
                 anstxt = anstxt.rstrip().split('\n')
                 anstxt = list(filter(lambda x: x.rstrip()!='', anstxt))
                 print(anstxt)
-                self.search_answer(query,anstxt)
-
+                self.searcher.search_answer(query,anstxt)
             elif key == ord('q'):
                 break
-
         # When everything done, release the capture
         cap.release()
         cv2.destroyAllWindows()
