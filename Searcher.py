@@ -17,6 +17,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
 class Searcher:
     def __init__(self):
+        self.google_banned = False
         self.stopwords = set(nltk.corpus.stopwords.words("english"))
         self.stopwords.add('which')
         self.stopwords.add('Which')
@@ -56,20 +57,24 @@ class Searcher:
             return ""
 
     def get_first_wiki_url(self, propernouns,use_google=True):
-        try:
             url = ""
-            if use_google:
-                print("use google")
-                html= self.get_google_page(propernouns+['site:wikipedia.org'])
-                html = str(html)
-                start_idx = html.find("<h3 class=\"r\"><a href=\"")
-                end_idx = html.find('\"',start_idx+len("<h3 class=\"r\"><a href=\""))
-                url = html[start_idx+len("<h3 class=\"r\"><a href=\""):end_idx]
+            if use_google and not(self.google_banned):
+                try:
+                    html= self.get_google_page(propernouns+['site:wikipedia.org'])
+                    html = str(html)
+                    start_idx = html.find("<h3 class=\"r\"><a href=\"")
+                    end_idx = html.find('\"',start_idx+len("<h3 class=\"r\"><a href=\""))
+                    url = html[start_idx+len("<h3 class=\"r\"><a href=\""):end_idx]
+                except:
+                    self.google_banned = True
+                    print("Banned by google, fallback to wikipedia.")
+                    url = ""
             if len(url) == 0:
-                url = wikipedia.page(wikipedia.search(" ".join(propernouns))[0]).url
+                try:
+                    url = wikipedia.page(wikipedia.search(" ".join(propernouns))[0]).url
+                except:
+                    url = ""
             return url
-        except:
-            return ""
 
     def search_google(self,question, open_in_browser=False):
         query_plus = question.replace(' ','+')
@@ -104,6 +109,8 @@ class Searcher:
         tagged_sent = pos_tag(query.split())
         propernouns = [word for word,pos in tagged_sent if pos == 'NNP']
         propernouns = list(filter(lambda x: x != "Which", propernouns))
+        if len(propernouns) == 0:
+            propernouns = list(filter(lambda t: t not in self.stopwords, query.split()))
         return propernouns
 
     def get_first_google_url_length(self, propernouns, ans):
@@ -146,23 +153,25 @@ class Searcher:
     def search_answer(self,question,ans):
         #self.find_occurance("a aa a","a")
         question  = unidecode(question) #convert all symbol to ascii, ie: curly quote to simple quote
-        self.search_google(question)
+        self.search_google(question,False)
         propernouns = self.get_propernouns(question)
         print(propernouns)
         translator = str.maketrans('', '', string.punctuation)
         if len(propernouns)>0:
-            self.search_google(" ".join(propernouns))
+            self.search_google(" ".join(propernouns),False)
             self.search_wikipedia(propernouns, ans, True)
             question = question.translate(translator)
             self.search_wikipedia2(question, ans, True)
+        print(bcolors.FAIL+"Ready to Capture!"+bcolors.ENDC)
 
 if __name__ == '__main__':
     questions = [["Which of these websites is owned by Vice Media?",["IGN","Joystiq","Waypoint"]],
-                 ["Which 80s song begins, “Bass, how low can you go?”",["My Adidas","Push It","Bring The Noise"]],
-                 ["Which of these is a popular anime series by Rooster Teeth?",["RWBY","BURY","WAKY"]],
-                 ["In Mexico, a saladito is always known as what?",["Taco salad", "Salted plum", "Guava roll"]],
-                 ["Which actor turned down the role of James Bond twice before finally accepting",["Timothy Dalton", "Roger Moore", "Sean Connery"]],
-                 ["Which country is Bond girl actress Eva Green from?",["France", "Denmark", "England"]]]
+                 # ["Which 80s song begins, “Bass, how low can you go?”",["My Adidas","Push It","Bring The Noise"]],
+                 # ["Which of these is a popular anime series by Rooster Teeth?",["RWBY","BURY","WAKY"]],
+                 # ["In Mexico, a saladito is always known as what?",["Taco salad", "Salted plum", "Guava roll"]],
+                 # ["Which actor turned down the role of James Bond twice before finally accepting",["Timothy Dalton", "Roger Moore", "Sean Connery"]],
+                 # ["Which country is Bond girl actress Eva Green from?",["France", "Denmark", "England"]],
+                 ["What company built the ﬁrst mobile phone?",["Motorola","Nokia","Ericsson"]]]
     searcher = Searcher()
     for q in questions:
         print("\nQuestion:\n",q)
