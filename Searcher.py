@@ -19,6 +19,8 @@ class bcolors:
     UNDERLINE = '\033[4m'
 class Searcher:
     def __init__(self):
+        self.question = ""
+        self.answer = []
         self.htmltext = html2text.HTML2Text()
         self.htmltext.ignore_links = True
         self.htmltext.ignore_images = True
@@ -32,6 +34,7 @@ class Searcher:
         self.stopwords.add('from?')
         self.stopwords.add('In')
         self.stopwords.add('always')
+        self.stopwords.add('following')
     # def alexa_rank(self,url):
     #     xml = request.urlopen('http://data.alexa.com/data?cli=10&dat=s&url=%s'%url).read().decode("utf-8")
     #     sp = re.search(r'REACH RANK="\d+"', xml).span()
@@ -92,7 +95,24 @@ class Searcher:
         html_s = html_p.split('\n')
         html_s = list(filter(lambda x: x!='',html_s))
         html_s = list(map(lambda x: x.strip(), html_s))
-        print(html_s[html_s.index('2. Similar')+1])
+        text = html_s[html_s.index('2. Similar')+1]
+        ans_words = []
+        for a in self.answer:
+            ans_words += a.split()
+        for w in ans_words:
+            text = self.insert_color_code(text, w)
+        print(text)
+
+    def insert_color_code(self, text, word):
+        start_i = 0
+        end_i = 0
+        while start_i != -1:
+            start_i = text.upper().find(word.upper(),end_i)
+            end_i = start_i + len(word)
+            if start_i != -1:
+                text = text[:start_i] + bcolors.OKGREEN + word + bcolors.ENDC + text[end_i:]
+                end_i += len(bcolors.OKGREEN) + len(bcolors.ENDC)
+        return text
 
     def search_google(self,question, open_in_browser=False):
         #print("query url:", "www.google.com/search?q="+query_plus)
@@ -172,6 +192,10 @@ class Searcher:
 
     def search_answer(self,question,ans):
         #self.find_occurance("a aa a","a")
+        question = question.replace("of the following","")
+        question = question.replace("of these","")
+        self.question = question
+        self.answer = ans
         question  = unidecode(question) #convert all symbol to ascii, ie: curly quote to simple quote
         self.search_google(question,False)
         propernouns = self.get_propernouns(question)
@@ -186,11 +210,11 @@ class Searcher:
 
 if __name__ == '__main__':
     questions = [["Which of these websites is owned by Vice Media?",["IGN","Joystiq","Waypoint"]],
-                 # ["Which 80s song begins, “Bass, how low can you go?”",["My Adidas","Push It","Bring The Noise"]],
-                 # ["Which of these is a popular anime series by Rooster Teeth?",["RWBY","BURY","WAKY"]],
+                 ["Which 80s song begins, “Bass, how low can you go?”",["My Adidas","Push It","Bring The Noise"]],
+                 ["Which of these is a popular anime series by Rooster Teeth?",["RWBY","BURY","WAKY"]],
                  ["In Mexico, a saladito is always known as what?",["Taco salad", "Salted plum", "Guava roll"]],
-                 # ["Which actor turned down the role of James Bond twice before finally accepting",["Timothy Dalton", "Roger Moore", "Sean Connery"]],
-                 # ["Which country is Bond girl actress Eva Green from?",["France", "Denmark", "England"]],
+                 ["Which actor turned down the role of James Bond twice before finally accepting",["Timothy Dalton", "Roger Moore", "Sean Connery"]],
+                 ["Which country is Bond girl actress Eva Green from?",["France", "Denmark", "England"]],
                  ["What company built the ﬁrst mobile phone?",["Motorola","Nokia","Ericsson"]]]
     searcher = Searcher()
     for q in questions:
