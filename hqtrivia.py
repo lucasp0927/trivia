@@ -87,7 +87,10 @@ class HQTrivia:
                 anstxt = anstxt.rstrip().split('\n')
                 anstxt = list(filter(lambda x: x.rstrip()!='', anstxt))
                 print(anstxt)
-                self.searcher.search_answer(query,anstxt)
+                try:
+                    self.searcher.search_answer(query,anstxt)
+                except:
+                    pass
             elif key == ord('q'):
                 break
         # When everything done, release the capture

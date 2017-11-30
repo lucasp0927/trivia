@@ -31,6 +31,7 @@ class Searcher:
         self.stopwords.add('Which')
         self.stopwords.add('What?')
         self.stopwords.add('what?')
+        self.stopwords.add('What')
         self.stopwords.add('from?')
         self.stopwords.add('In')
         self.stopwords.add('always')
@@ -99,6 +100,7 @@ class Searcher:
         ans_words = []
         for a in self.answer:
             ans_words += a.split()
+        ans_words = list(filter(lambda t: t not in self.stopwords, ans_words))
         for w in ans_words:
             text = self.insert_color_code(text, w)
         print(text)
@@ -162,9 +164,12 @@ class Searcher:
             print(len(url))
 
     def find_occurance(self, text, target):
-        regex = re.compile('[^0-9a-zA-Z]'+target+'[^0-9a-zA-Z]')
-        match = re.findall(regex, text)
-        return len(match)
+        target = list(filter(lambda t: t not in self.stopwords, target.split()))
+        count = 0
+        for t in target:
+            regex = re.compile('[^0-9a-zA-Z]'+t+'[^0-9a-zA-Z]')
+            count += len(re.findall(regex, text))
+        return count
 
     def search_wikipedia(self, propernouns, ans, use_google = True):
         print(bcolors.FAIL+"Search Wikipedia"+bcolors.ENDC)
@@ -172,9 +177,13 @@ class Searcher:
         print(wiki_url)
         if len(wiki_url)>0:
             html = str(self.get_page(wiki_url))
-            for a in ans:
-                print(a,": ", self.find_occurance(html.upper(),a.upper()))#TODO: only find term start with non-alphebatic
-
+            counts =  list(map(lambda x: self.find_occurance(html.upper(),x.upper()), ans))
+            counts_max = max(enumerate(counts),key=lambda x: x[1])[0]
+            for ans_i in range(len(ans)):
+                if ans_i == counts_max:
+                    print(bcolors.OKBLUE,ans[ans_i],": ", counts[ans_i],bcolors.ENDC)
+                else:
+                    print(ans[ans_i],": ", counts[ans_i])
     def search_wikipedia2(self, question, ans, use_google = True):
         print(bcolors.FAIL+"Search Wikipedia (method 2)"+bcolors.ENDC)
         q_terms = question.lower().split(" ")
@@ -196,25 +205,31 @@ class Searcher:
         question = question.replace("of these","")
         self.question = question
         self.answer = ans
-        question  = unidecode(question) #convert all symbol to ascii, ie: curly quote to simple quote
+        try:
+            question  = unidecode(question) #convert all symbol to ascii, ie: curly quote to simple quote
+        except:
+            pass
         self.search_google(question,False)
         propernouns = self.get_propernouns(question)
         print(propernouns)
-        translator = str.maketrans('', '', string.punctuation)
+        #translator = str.maketrans('', '', string.punctuation)
         if len(propernouns)>0:
             #self.search_google(" ".join(propernouns),False)
             self.search_wikipedia(propernouns, ans, True)
-            question = question.translate(translator)
+            #question = question.translate(translator)#remove punctuations
             #self.search_wikipedia2(question, ans, True)
         print(bcolors.FAIL+"Ready to Capture!"+bcolors.ENDC)
 
 if __name__ == '__main__':
     questions = [["Which of these websites is owned by Vice Media?",["IGN","Joystiq","Waypoint"]],
-                 ["Which 80s song begins, “Bass, how low can you go?”",["My Adidas","Push It","Bring The Noise"]],
-                 ["Which of these is a popular anime series by Rooster Teeth?",["RWBY","BURY","WAKY"]],
-                 ["In Mexico, a saladito is always known as what?",["Taco salad", "Salted plum", "Guava roll"]],
-                 ["Which actor turned down the role of James Bond twice before finally accepting",["Timothy Dalton", "Roger Moore", "Sean Connery"]],
-                 ["Which country is Bond girl actress Eva Green from?",["France", "Denmark", "England"]],
+                 # ["Which 80s song begins, “Bass, how low can you go?”",["My Adidas","Push It","Bring The Noise"]],
+                 # ["Which of these is a popular anime series by Rooster Teeth?",["RWBY","BURY","WAKY"]],
+                 # ["In Mexico, a saladito is always known as what?",["Taco salad", "Salted plum", "Guava roll"]],
+                 # ["Which actor turned down the role of James Bond twice before finally accepting",["Timothy Dalton", "Roger Moore", "Sean Connery"]],
+                 # ["Which country is Bond girl actress Eva Green from?",["France", "Denmark", "England"]],
+                 # ["What does an okta measure?",["Japanese seasons", "Ocean salinity", "Cloud cover"]],
+                 #["In the 2010 Oracle v. Google case, it was ruled that which cannot be copyrighted?",["Search databae", "Web addresses", "APIs"]],
+                 ["Which underwear brand licenses the name of a former tennis star?",["Giorgio Armani", "Bjérn Borg", "Calvin Klein"]],
                  ["What company built the ﬁrst mobile phone?",["Motorola","Nokia","Ericsson"]]]
     searcher = Searcher()
     for q in questions:
