@@ -2,11 +2,11 @@ import numpy as np
 import cv2
 import subprocess
 from PIL import Image
-import sys
+import sys, os
 import pyocr
 import pyocr.builders
 import Searcher
-
+import time
 class HQTrivia:
     def __init__(self):
         # initialize OCR
@@ -27,8 +27,18 @@ class HQTrivia:
         while(True):
             input('Press Enter to capture...')
             print('capture!')
+            try:
+                os.remove('./screenshot.png')
+            except:
+                pass
             subprocess.call(['./iphone_screenshot.sh'])
-            screenshot = Image.open("./screenshot.png").convert('L') #convert to greyscale
+            time.sleep(0.5)
+            try:
+                screenshot = Image.open("./screenshot.png").convert('L') #convert to greyscale
+            except:
+                print('Screenshot not captured!')
+                continue
+
             q_img = screenshot.crop((150, 350, 1187, 850))
             q_img_arr = np.asarray(q_img)
             q_img_arr = cv2.medianBlur(q_img_arr,3)
@@ -40,7 +50,7 @@ class HQTrivia:
             a_img_arr = cv2.medianBlur(a_img_arr,3)
             ret,a_img_arr = cv2.threshold(a_img_arr,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
             a_img = Image.fromarray(a_img_arr)
-            a_img.show()
+
             txt = self.tool.image_to_string(
                 q_img,
                 lang=self.lang,
