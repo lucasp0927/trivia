@@ -7,6 +7,7 @@ import pyocr
 import pyocr.builders
 import Searcher
 import time
+
 class HQTrivia:
     def __init__(self):
         # initialize OCR
@@ -39,16 +40,20 @@ class HQTrivia:
                 print('Screenshot not captured!')
                 continue
 
-            q_img = screenshot.crop((150, 350, 1187, 850))
+            screen_w,screen_h = screenshot.size
+
+            q_img = screenshot.crop((150, 400, 1187, 850))
             q_img_arr = np.asarray(q_img)
             q_img_arr = cv2.medianBlur(q_img_arr,3)
             ret,q_img_arr = cv2.threshold(q_img_arr,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+            cv2.imwrite('q_img.png',q_img_arr)
             q_img = Image.fromarray(q_img_arr)
 
             a_img = screenshot.crop((150, 900, 1187, 1450))
             a_img_arr = np.asarray(a_img)
             a_img_arr = cv2.medianBlur(a_img_arr,3)
             ret,a_img_arr = cv2.threshold(a_img_arr,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+            cv2.imwrite('a_img.png',a_img_arr)
             a_img = Image.fromarray(a_img_arr)
 
             txt = self.tool.image_to_string(

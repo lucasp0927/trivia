@@ -153,6 +153,7 @@ class Searcher:
         # propernouns = list(filter(lambda x: x != "Which", propernouns))
         # if len(propernouns) == 0:
         propernouns = list(filter(lambda t: t not in self.stopwords, query.split()))
+        #propernouns = query.split()
         return propernouns
 
     def get_first_google_url_length(self, propernouns, ans):
@@ -173,6 +174,7 @@ class Searcher:
 
     def search_wikipedia(self, propernouns, ans, use_google = True):
         print(bcolors.FAIL+"Search Wikipedia"+bcolors.ENDC)
+        print(propernouns)
         wiki_url = self.get_first_wiki_url(propernouns,use_google)
         print(wiki_url)
         if len(wiki_url)>0:
@@ -210,6 +212,7 @@ class Searcher:
         except:
             pass
         self.search_google(question,False)
+        self.search_wikipedia(question.split(), ans, True)
         propernouns = self.get_propernouns(question)
         print(propernouns)
         #translator = str.maketrans('', '', string.punctuation)
