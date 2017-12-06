@@ -7,6 +7,9 @@ import pyocr
 import pyocr.builders
 import Searcher
 import time
+#w 1324 h 2222
+q_box_scale = np.array([150/1324,400/2222,1187/1324,850/2222])
+a_box_scale = np.array([150/1324,900/2222,1187/1324,1450/2222])
 
 class HQTrivia:
     def __init__(self):
@@ -28,12 +31,12 @@ class HQTrivia:
         while(True):
             input('Press Enter to capture...')
             print('capture!')
-            try:
-                os.remove('./screenshot.png')
-            except:
-                pass
-            subprocess.call(['./iphone_screenshot.sh'])
-            time.sleep(0.5)
+            # try:
+            #     os.remove('./screenshot.png')
+            # except:
+            #     pass
+            # subprocess.call(['./iphone_screenshot.sh'])
+            # time.sleep(0.5)
             try:
                 screenshot = Image.open("./screenshot.png").convert('L') #convert to greyscale
             except:
@@ -41,15 +44,17 @@ class HQTrivia:
                 continue
 
             screen_w,screen_h = screenshot.size
-
-            q_img = screenshot.crop((150, 400, 1187, 850))
+            screen_box = np.array([screen_w,screen_h,screen_w,screen_h])
+            print(screen_w)
+            print(screen_h)
+            q_img = screenshot.crop(tuple(screen_box*q_box_scale))
             q_img_arr = np.asarray(q_img)
             q_img_arr = cv2.medianBlur(q_img_arr,3)
             ret,q_img_arr = cv2.threshold(q_img_arr,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
             cv2.imwrite('q_img.png',q_img_arr)
             q_img = Image.fromarray(q_img_arr)
 
-            a_img = screenshot.crop((150, 900, 1187, 1450))
+            a_img = screenshot.crop(tuple(screen_box*a_box_scale))
             a_img_arr = np.asarray(a_img)
             a_img_arr = cv2.medianBlur(a_img_arr,3)
             ret,a_img_arr = cv2.threshold(a_img_arr,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
@@ -72,7 +77,8 @@ class HQTrivia:
             anstxt = list(filter(lambda x: x.rstrip()!='', anstxt))
             print(anstxt)
             try:
-                self.searcher.search_answer(query,anstxt)
+                pass
+                #self.searcher.search_answer(query,anstxt)
             except:
                 pass
 
