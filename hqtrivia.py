@@ -31,12 +31,12 @@ class HQTrivia:
         while(True):
             input('Press Enter to capture...')
             print('capture!')
-            # try:
-            #     os.remove('./screenshot.png')
-            # except:
-            #     pass
-            # subprocess.call(['./iphone_screenshot.sh'])
-            # time.sleep(0.5)
+            try:
+                os.remove('./screenshot.png')
+            except:
+                pass
+            subprocess.call(['./iphone_screenshot.sh'])
+            time.sleep(0.5)
             try:
                 screenshot = Image.open("./screenshot.png").convert('L') #convert to greyscale
             except:
@@ -45,8 +45,6 @@ class HQTrivia:
 
             screen_w,screen_h = screenshot.size
             screen_box = np.array([screen_w,screen_h,screen_w,screen_h])
-            print(screen_w)
-            print(screen_h)
             q_img = screenshot.crop(tuple(screen_box*q_box_scale))
             q_img_arr = np.asarray(q_img)
             q_img_arr = cv2.medianBlur(q_img_arr,3)
@@ -78,7 +76,7 @@ class HQTrivia:
             print(anstxt)
             try:
                 pass
-                #self.searcher.search_answer(query,anstxt)
+                self.searcher.search_answer(query,anstxt)
             except:
                 pass
 
