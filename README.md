@@ -9,3 +9,7 @@ brew install tesseract
 * pyocr
 * requests
 * unidecode
+* html2text
+## Usage
+Use quicktime player to monitor iphone screen.
+https://www.tekrevue.com/tip/record-iphone-screen-quicktime/
