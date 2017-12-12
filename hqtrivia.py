@@ -75,7 +75,6 @@ class HQTrivia:
             anstxt = list(filter(lambda x: x.rstrip()!='', anstxt))
             print(anstxt)
             try:
-                pass
                 self.searcher.search_answer(query,anstxt)
             except:
                 pass

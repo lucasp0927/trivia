@@ -13,3 +13,4 @@ brew install tesseract
 ## Usage
 Use quicktime player to monitor iphone screen.
 https://www.tekrevue.com/tip/record-iphone-screen-quicktime/
+python3 hqtrivia.py

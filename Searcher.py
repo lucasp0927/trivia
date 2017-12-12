@@ -7,6 +7,7 @@ from unidecode import unidecode
 import wikipedia
 import re
 import html2text
+import time
 
 class bcolors:
     HEADER = '\033[95m'
@@ -141,10 +142,24 @@ class Searcher:
                     webbrowser.get('chrome').open_new_tab("http://www.google.com/search?q="+query_plus)
         return find_quote, quote
 
+    def search_all_cap(self, question):
+        find_all_cap = False
+        ans = re.findall('([A-Z][a-z]+(?=\s[A-Z])(?:\s[A-Z][a-z]+)+)',question)
+        ans = " ".join(ans)
+        if len(ans.split()) >= 2:
+            find_all_cap = True
+            print("find capitalize nouns!")
+            print(ans)
+        return find_all_cap, ans
+
     def get_propernouns(self,question):
+        #Find quotation mark
         find_quote, quote = self.search_quote(question)
         if find_quote:
             return quote.split()
+        find_all_cap, quote = self.search_all_cap(question)
+        if find_all_cap:
+             return quote.split()
         #search proper nouns
         translator = str.maketrans('', '', string.punctuation)
         query = question.translate(translator)
@@ -201,6 +216,22 @@ class Searcher:
                     count += self.find_occurance(html.upper(), q.upper())/len(html)
                 print(a,": ",round(count*100000))
 
+    def find_list_query(self, question):
+        found = False
+        q_split = question.split()
+        tagged_sent = pos_tag(q_split)
+        print(tagged_sent)
+        start_word = [word for word,pos in tagged_sent if pos in ['JJS','RBS']]
+        if len(start_word) > 0:
+            found = True
+            q = " ".join(q_split[q_split.index(start_word[0]):])
+        else:
+            q = ""
+        return found, q
+
+            # superlative_adj = [word for word,pos in tagged_sent if pos in ['JJS','RBS']]
+            # print(superlative_adj)
+
     def search_answer(self,question,ans):
         #self.find_occurance("a aa a","a")
         question = question.replace("of the following","")
@@ -211,20 +242,26 @@ class Searcher:
             question  = unidecode(question) #convert all symbol to ascii, ie: curly quote to simple quote
         except:
             pass
+        #fist search the whole question on google
         self.search_google(question,False)
+        #second, search the whole question for wikipedia page
         self.search_wikipedia(question.split(), ans, True)
+        #TODO: identify superlative adjetives, (never, most, ADJest). find wikipedia list
+        #need_list, query = self.find_list_query(question)
+        # if need_list:
+        #     print(query)
+
+        #search for special nouns
         propernouns = self.get_propernouns(question)
         print(propernouns)
-        #translator = str.maketrans('', '', string.punctuation)
         if len(propernouns)>0:
-            #self.search_google(" ".join(propernouns),False)
             self.search_wikipedia(propernouns, ans, True)
-            #question = question.translate(translator)#remove punctuations
-            #self.search_wikipedia2(question, ans, True)
-        print(bcolors.FAIL+"Ready to Capture!"+bcolors.ENDC)
+
+        #done!
+        print("\n"+bcolors.FAIL+"Ready to Capture!"+bcolors.ENDC)
 
 if __name__ == '__main__':
-    questions = [["Which of these websites is owned by Vice Media?",["IGN","Joystiq","Waypoint"]],
+    questions = [#["Which of these websites is owned by Vice Media?",["IGN","Joystiq","Waypoint"]],
                  # ["Which 80s song begins, “Bass, how low can you go?”",["My Adidas","Push It","Bring The Noise"]],
                  # ["Which of these is a popular anime series by Rooster Teeth?",["RWBY","BURY","WAKY"]],
                  # ["In Mexico, a saladito is always known as what?",["Taco salad", "Salted plum", "Guava roll"]],
@@ -232,9 +269,15 @@ if __name__ == '__main__':
                  # ["Which country is Bond girl actress Eva Green from?",["France", "Denmark", "England"]],
                  # ["What does an okta measure?",["Japanese seasons", "Ocean salinity", "Cloud cover"]],
                  #["In the 2010 Oracle v. Google case, it was ruled that which cannot be copyrighted?",["Search databae", "Web addresses", "APIs"]],
+                 ["Which of these is the most populous city with “city” in its name?",['Mexico City', 'New York City', 'Taipei City']],
+                 ["Which is the highest grossing film of 1998",["Armageddon","Saving Private Ryan","Godzilla"]],
+                 ["Which NBA team has never produced a Slam Dunk Contest winner?",['Orlando Magic', 'Philadelphia 76ers', 'LA Clippers']],
                  ["Which underwear brand licenses the name of a former tennis star?",["Giorgio Armani", "Bjérn Borg", "Calvin Klein"]],
                  ["What company built the ﬁrst mobile phone?",["Motorola","Nokia","Ericsson"]]]
     searcher = Searcher()
     for q in questions:
         print("\nQuestion:\n",q)
+        start = time.time()
         searcher.search_answer(q[0],q[1])
+        end = time.time()
+        print("time spent: ",end - start)
