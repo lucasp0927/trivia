@@ -1,3 +1,4 @@
+An attempt to beat HQ trivia.
 # installation
 ## Libraries
 brew install tesseract
